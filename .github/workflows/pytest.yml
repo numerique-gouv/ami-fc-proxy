@@ -11,6 +11,10 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
       - run: make lint-and-format
 
   run-tests:
