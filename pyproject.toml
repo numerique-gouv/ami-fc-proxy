@@ -1,0 +1,53 @@
+[project]
+name = "fc-proxy"
+version = "0.1.0"
+description = "FranceConnect proxy"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "litestar[standard]>=2.15.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "pre-commit>=4.2.0",
+    "pre-commit-uv>=4.1.4",
+    "pyright>=1.1.390",
+    "pytest>=8.4.2",
+    "ruff>=0.11.2",
+]
+
+[tool.pyright]
+# Python version and environment
+pythonVersion = "3.13"
+include = ["app", "tests"]
+
+# Type checking mode
+typeCheckingMode = "strict"
+
+# Enable specific checks
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+reportOptionalSubscript = true
+reportOptionalMemberAccess = true
+reportOptionalCall = true
+reportOptionalIterable = true
+reportOptionalContextManager = true
+reportOptionalOperand = true
+reportTypedDictNotRequiredAccess = false
+
+# Relaxed settings for tests
+[tool.pyright.defineConstant]
+# Allow more flexible typing in test files
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I"] # also sort imports with an isort rule
