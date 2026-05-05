@@ -1,5 +1,6 @@
 from litestar import Litestar
 from litestar.status_codes import (
+    HTTP_200_OK,
     HTTP_302_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
@@ -67,3 +68,38 @@ def test_proxy_logout(test_client: TestClient[Litestar]) -> None:
         response.headers["location"]
         == "https://example.com/?state=https%3A%2F%2Fexample.com%2F%3Fis_logged_out&is_logged_out="
     )
+
+
+def test_proxy_ami_fi_authorize_request(test_client: TestClient[Litestar]) -> None:
+    params = {
+        "from_url": "http://review-app1/",
+        "fc_url": "http://fc/",
+    }
+    response = test_client.get("/ami-fi-authorize-request", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_302_FOUND
+    assert response.headers["location"] == "http://fc/"
+
+    response = test_client.get("/ami-fi-get-from-url")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"from_url": "http://review-app1/"}
+
+
+def test_proxy_ami_fi_authorize_request_missing_params(test_client: TestClient[Litestar]) -> None:
+    params: dict[str, str] = {}
+    response = test_client.get("/ami-fi-authorize-request", params=params)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not redirect to FC authorize endpoint"}
+
+    params = {
+        "from_url": "http://review-app1/",
+    }
+    response = test_client.get("/ami-fi-authorize-request", params=params)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not redirect to FC authorize endpoint"}
+
+    params = {
+        "fc_url": "http://fc/",
+    }
+    response = test_client.get("/ami-fi-authorize-request", params=params)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not redirect to FC authorize endpoint"}

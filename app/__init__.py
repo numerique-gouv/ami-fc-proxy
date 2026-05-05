@@ -3,19 +3,22 @@ from urllib.parse import parse_qs, unquote, urlparse, urlunparse
 
 from litestar import (
     Litestar,
+    Request,
     Response,
     get,
 )
 from litestar.config.cors import CORSConfig
+from litestar.middleware.session.client_side import CookieBackendConfig
 from litestar.response.redirect import Redirect
 from litestar.status_codes import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
 cors_config = CORSConfig(allow_origins=["*"])
+session_config = CookieBackendConfig(secret=b"34682223291bc7c0736507d1b91288bd")
 
 
-#### ENDPOINTS
+# ENDPOINTS
 
 
 @get(path="/", include_in_schema=False)
@@ -40,11 +43,28 @@ async def fc_proxy(query: dict[str, str]) -> Response[Any]:
     return Redirect(redirect_url, query_params=all_query_params)
 
 
-#### APP
+@get(path="/ami-fi-authorize-request/", include_in_schema=False)
+async def ami_fi_authorize_request(
+    request: Request[Any, Any, Any], query: dict[str, str]
+) -> Response[Any]:
+    if "from_url" not in query or "fc_url" not in query:
+        details = {"error": "Can not redirect to FC authorize endpoint"}
+        return Response(details, status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+    request.session["ami_fi_from_url"] = query["from_url"]
+    return Redirect(query["fc_url"])
+
+
+@get(path="/ami-fi-get-from-url/", include_in_schema=False)
+async def ami_fi_get_from_url(request: Request[Any, Any, Any]) -> dict[str, str]:
+    return {"from_url": request.session.get("ami_fi_from_url") or ""}
+
+
+# APP
 
 
 def create_app() -> Litestar:
     return Litestar(
-        route_handlers=[fc_proxy],
+        route_handlers=[fc_proxy, ami_fi_authorize_request, ami_fi_get_from_url],
         cors_config=cors_config,
+        middleware=[session_config.middleware],
     )

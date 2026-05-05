@@ -5,7 +5,7 @@ description = "FranceConnect proxy"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "litestar[standard]>=2.15.1",
+    "litestar[cryptography,standard]>=2.15.1",
 ]
 
 [dependency-groups]
