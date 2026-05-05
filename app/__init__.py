@@ -59,12 +59,22 @@ async def ami_fi_get_from_url(request: Request[Any, Any, Any]) -> dict[str, str]
     return {"from_url": request.session.get("ami_fi_from_url") or ""}
 
 
+@get(path="/api/v1/fi/authorize/", include_in_schema=False)
+async def ami_fi_authorize(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
+    from_url = request.session.get("ami_fi_from_url")
+    if not from_url:
+        details = {"error": "Can not redirect to FI authorize endpoint"}
+        return Response(details, status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+    redirect_url = f"{from_url}api/v1/fi/authorize/"
+    return Redirect(redirect_url, query_params=query)
+
+
 # APP
 
 
 def create_app() -> Litestar:
     return Litestar(
-        route_handlers=[fc_proxy, ami_fi_authorize_request, ami_fi_get_from_url],
+        route_handlers=[fc_proxy, ami_fi_authorize_request, ami_fi_get_from_url, ami_fi_authorize],
         cors_config=cors_config,
         middleware=[session_config.middleware],
     )

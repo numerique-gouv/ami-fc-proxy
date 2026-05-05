@@ -1,3 +1,4 @@
+import pytest
 from litestar import Litestar
 from litestar.status_codes import (
     HTTP_200_OK,
@@ -103,3 +104,21 @@ def test_proxy_ami_fi_authorize_request_missing_params(test_client: TestClient[L
     response = test_client.get("/ami-fi-authorize-request", params=params)
     assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
     assert response.json() == {"error": "Can not redirect to FC authorize endpoint"}
+
+
+def test_proxy_ami_fi_authorize(
+    test_client: TestClient[Litestar], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    params = {
+        "foo": "bar",
+    }
+    monkeypatch.setattr("litestar.Request.session", {"ami_fi_from_url": "http://review-app1/"})
+    response = test_client.get("/api/v1/fi/authorize/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_302_FOUND
+    assert response.headers["location"] == "http://review-app1/api/v1/fi/authorize/?foo=bar"
+
+
+def test_proxy_ami_fi_authorize_missing_session(test_client: TestClient[Litestar]) -> None:
+    response = test_client.get("/api/v1/fi/authorize/", params={}, follow_redirects=False)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not redirect to FI authorize endpoint"}
