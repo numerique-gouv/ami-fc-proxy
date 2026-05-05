@@ -11,4 +11,4 @@ then
   RUN=""
 fi
 
-uv run litestar run -p ${PORT} -H ${HOSTNAME} ${RELOAD} ${DEBUG} ${SSL}
+${RUN} litestar run -p ${PORT} -H ${HOSTNAME} ${RELOAD} ${DEBUG} ${SSL}
