@@ -10,4 +10,4 @@ then
   RUN="uv run"
 fi
 
-${RUN} litestar run -p ${PORT} -H ${HOSTNAME} ${RELOAD} ${DEBUG} ${SSL}
+make migrate && gunicorn ami.asgi:application --bind ${HOST}:${PORT} --worker-class uvicorn.workers.UvicornWorker --forwarded-allow-ips="*" --log-file -
