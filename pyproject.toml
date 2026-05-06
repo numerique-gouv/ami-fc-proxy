@@ -5,7 +5,13 @@ description = "FranceConnect proxy"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "litestar[cryptography,standard]>=2.15.1",
+    "django>=6.0.5",
+    "django-database-url>=1.0.3",
+    "django-stubs[compatible-mypy]>=6.0.3",
+    "gunicorn>=26.0.0",
+    "psycopg[binary]>=3.3.4",
+    "python-dotenv>=1.1.1",
+    "uvicorn[standard]>=0.37.0",
 ]
 
 [dependency-groups]
@@ -15,13 +21,15 @@ dev = [
     "pre-commit-uv>=4.1.4",
     "pyright>=1.1.390",
     "pytest>=8.4.2",
+    "pytest-django>=4.12.0",
     "ruff>=0.11.2",
 ]
 
 [tool.pyright]
 # Python version and environment
 pythonVersion = "3.13"
-include = ["app", "tests"]
+include = ["proxy"]
+exclude = [".venv"]
 
 # Type checking mode
 typeCheckingMode = "strict"
@@ -51,3 +59,6 @@ line-length = 100
 
 [tool.ruff.lint]
 extend-select = ["I"] # also sort imports with an isort rule
+
+[tool.django-stubs]
+django_settings_module = "proxy.settings"

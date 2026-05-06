@@ -11,16 +11,26 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - run: make lint-and-format
+      - name: lint-and-format
+        run: make lint-and-format
 
   run-tests:
     name: python
     runs-on: ubuntu-latest
     needs: [lint-and-format]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: some_password
+          POSTGRES_DB: postgres_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -37,5 +47,5 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run tests
-        run: make test
+        run: make test-ci
 
