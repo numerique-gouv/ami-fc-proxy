@@ -6,6 +6,7 @@ from litestar.status_codes import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from litestar.testing import TestClient
+from pytest_httpx import HTTPXMock
 
 
 def test_proxy_login(test_client: TestClient[Litestar]) -> None:
@@ -180,3 +181,35 @@ def test_proxy_ami_fi_authorize_missing_session(test_client: TestClient[Litestar
     response = test_client.get("/api/v1/fi/authorize/", params={}, follow_redirects=False)
     assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
     assert response.json() == {"error": "Can not redirect to FI authorize endpoint"}
+
+
+async def test_proxy_ami_fi_token(
+    app: Litestar,
+    test_client: TestClient[Litestar],
+    httpx_mock: HTTPXMock,
+) -> None:
+    store = app.stores.get("oidc_sessions")
+    await store.set("fake-code", "http://review-app1/", expires_in=500)
+    httpx_mock.add_response(json={"access_token": "fake-access-token"})
+    params = {"code": "fake-code"}
+    response = test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"access_token": "fake-access-token"}
+
+
+def test_proxy_ami_fi_token_missing_code(test_client: TestClient[Litestar]) -> None:
+    response = test_client.post("/api/v1/fi/token/", follow_redirects=False)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not call FI token endpoint"}
+
+
+async def test_proxy_ami_fi_token_missing_from_url(
+    app: Litestar,
+    test_client: TestClient[Litestar],
+) -> None:
+    store = app.stores.get("oidc_sessions")
+    await store.set("another-fake-code", "from_url", expires_in=500)
+    params = {"code": "fake-code"}
+    response = test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not found from_url"}
