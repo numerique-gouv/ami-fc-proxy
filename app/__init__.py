@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import parse_qs, unquote, urlparse, urlunparse
 
 from httpx import AsyncClient
@@ -10,7 +10,9 @@ from litestar import (
     post,
 )
 from litestar.config.cors import CORSConfig
+from litestar.enums import RequestEncodingType
 from litestar.middleware.session.client_side import CookieBackendConfig
+from litestar.params import Body
 from litestar.response.redirect import Redirect
 from litestar.status_codes import (
     HTTP_500_INTERNAL_SERVER_ERROR,
@@ -97,7 +99,10 @@ async def ami_fi_authorize(request: Request[Any, Any, Any], query: dict[str, str
 
 
 @post(path="/api/v1/fi/token/", include_in_schema=False)
-async def ami_fi_token(request: Request[Any, Any, Any], data: dict[str, str]) -> Response[Any]:
+async def ami_fi_token(
+    request: Request[Any, Any, Any],
+    data: Annotated[dict[str, str], Body(media_type=RequestEncodingType.URL_ENCODED)],
+) -> Response[Any]:
     code = data.get("code")
     if not code:
         raise Exception("Can not found code in query")
