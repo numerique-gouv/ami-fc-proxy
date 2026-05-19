@@ -114,7 +114,7 @@ async def ami_fi_token(
     async with AsyncClient() as client:
         response = await client.post(
             f"{from_url.decode()}api/v1/fi/token/",
-            params=data,
+            data=data,
         )
     return Response(
         response.json(),
