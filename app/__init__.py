@@ -122,6 +122,11 @@ async def ami_fi_token(request: Request[Any, Any, Any], query: dict[str, str]) -
 # APP
 
 
+def exception_handler(_: Request[Any, Any, Any], exc: Exception):
+    print(exc)
+    raise exc
+
+
 def create_app() -> Litestar:
     return Litestar(
         route_handlers=[
@@ -135,4 +140,5 @@ def create_app() -> Litestar:
         cors_config=cors_config,
         middleware=[session_config.middleware],
         stores={"oidc_sessions": MemoryStore()},
+        exception_handlers={Exception: exception_handler},
     )
