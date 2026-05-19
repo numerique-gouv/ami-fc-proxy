@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import parse_qs, unquote, urlparse, urlunparse
@@ -118,6 +119,35 @@ async def ami_fi_token(
             f"{from_url.decode()}api/v1/fi/token/",
             data=data,
         )
+    store = request.app.stores.get("oidc_sessions")
+    response_data = response.json()
+    if response_data.get("access_token"):
+        await store.set(response_data["access_token"], from_url, expires_in=300)
+    return Response(
+        response_data,
+        status_code=response.status_code,
+    )
+
+
+@get(path="/api/v1/fi/userinfo/", include_in_schema=False)
+async def ami_fi_userinfo(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header:
+        raise Exception("Missing authorization header")
+    pattern = re.compile(r"^Bearer\s([A-Z-a-z-0-9-_/-]+)$")
+    if not pattern.match(auth_header):
+        raise Exception("Wrong format authorization header")
+    access_token = auth_header[7:]
+    store = request.app.stores.get("oidc_sessions")
+    from_url = await store.get(access_token)
+    if not from_url:
+        raise Exception("Can not found from_url in storage")
+
+    async with AsyncClient() as client:
+        response = await client.get(
+            f"{from_url.decode()}api/v1/fi/userinfo/",
+            headers=request.headers,
+        )
     return Response(
         response.json(),
         status_code=response.status_code,
@@ -141,6 +171,7 @@ def create_app(stores: dict[str, Store] | None = None) -> Litestar:
             ami_fi_get_from_url,
             ami_fi_authorize,
             ami_fi_token,
+            ami_fi_userinfo,
         ],
         cors_config=cors_config,
         middleware=[session_config.middleware],

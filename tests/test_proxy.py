@@ -195,6 +195,10 @@ async def test_proxy_ami_fi_token(
     response = test_client.post("/api/v1/fi/token/", data=params, follow_redirects=False)
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"access_token": "fake-access-token"}
+    store = app.stores.get("oidc_sessions")
+    access_token = await store.get("fake-access-token")
+    assert access_token
+    assert access_token.decode() == "http://review-app1/"
 
 
 def test_proxy_ami_fi_token_missing_code(test_client: TestClient[Litestar]) -> None:
@@ -212,4 +216,47 @@ async def test_proxy_ami_fi_token_missing_from_url(
     params = {"code": "fake-code"}
     with pytest.raises(Exception) as e:
         test_client.post("/api/v1/fi/token/", data=params, follow_redirects=False)
+    assert str(e.value) == "Can not found from_url in storage"
+
+
+async def test_proxy_ami_fi_userinfo(
+    app: Litestar,
+    test_client: TestClient[Litestar],
+    httpx_mock: HTTPXMock,
+) -> None:
+    store = app.stores.get("oidc_sessions")
+    await store.set("fake-access-token", "http://review-app1/", expires_in=500)
+    httpx_mock.add_response(json={"foo": "bar"})
+    headers = {"authorization": "Bearer fake-access-token"}
+    response = test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"foo": "bar"}
+
+
+def test_proxy_ami_fi_userinfo_missing_authorization_header(
+    test_client: TestClient[Litestar],
+) -> None:
+    with pytest.raises(Exception) as e:
+        test_client.get("/api/v1/fi/userinfo/", follow_redirects=False)
+    assert str(e.value) == "Missing authorization header"
+
+
+def test_proxy_ami_fi_userinfo_wrong_format_authorization_header(
+    test_client: TestClient[Litestar],
+) -> None:
+    headers = {"authorization": "wrong-format-authorization-header"}
+    with pytest.raises(Exception) as e:
+        test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
+    assert str(e.value) == "Wrong format authorization header"
+
+
+async def test_proxy_ami_fi_userinfo_missing_from_url(
+    app: Litestar,
+    test_client: TestClient[Litestar],
+) -> None:
+    store = app.stores.get("oidc_sessions")
+    await store.set("another-fake-access-token", "from_url", expires_in=500)
+    headers = {"authorization": "Bearer fake-access-token"}
+    with pytest.raises(Exception) as e:
+        test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
     assert str(e.value) == "Can not found from_url in storage"
