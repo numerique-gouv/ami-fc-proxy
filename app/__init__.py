@@ -100,13 +100,11 @@ async def ami_fi_authorize(request: Request[Any, Any, Any], query: dict[str, str
 async def ami_fi_token(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
     code = query.get("code")
     if not code:
-        details = {"error": "Can not call FI token endpoint"}
-        return Response(details, status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+        raise Exception("Can not found code in query")
     store = request.app.stores.get("oidc_sessions")
     from_url = await store.get(code)
     if not from_url:
-        details = {"error": "Can not found from_url"}
-        return Response(details, status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+        raise Exception("Can not found from_url in storage")
 
     async with AsyncClient() as client:
         response = await client.post(

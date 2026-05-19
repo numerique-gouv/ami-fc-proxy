@@ -198,9 +198,9 @@ async def test_proxy_ami_fi_token(
 
 
 def test_proxy_ami_fi_token_missing_code(test_client: TestClient[Litestar]) -> None:
-    response = test_client.post("/api/v1/fi/token/", follow_redirects=False)
-    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
-    assert response.json() == {"error": "Can not call FI token endpoint"}
+    with pytest.raises(Exception) as e:
+        test_client.post("/api/v1/fi/token/", follow_redirects=False)
+    assert str(e.value) == "Can not found code in query"
 
 
 async def test_proxy_ami_fi_token_missing_from_url(
@@ -210,6 +210,6 @@ async def test_proxy_ami_fi_token_missing_from_url(
     store = app.stores.get("oidc_sessions")
     await store.set("another-fake-code", "from_url", expires_in=500)
     params = {"code": "fake-code"}
-    response = test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
-    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
-    assert response.json() == {"error": "Can not found from_url"}
+    with pytest.raises(Exception) as e:
+        test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
+    assert str(e.value) == "Can not found from_url in storage"
