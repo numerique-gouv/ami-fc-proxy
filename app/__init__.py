@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import parse_qs, unquote, urlparse, urlunparse
 
@@ -17,7 +18,8 @@ from litestar.response.redirect import Redirect
 from litestar.status_codes import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
-from litestar.stores.memory import MemoryStore
+from litestar.stores.base import Store
+from litestar.stores.file import FileStore
 
 cors_config = CORSConfig(allow_origins=["*"])
 session_config = CookieBackendConfig(secret=b"34682223291bc7c0736507d1b91288bd")
@@ -130,7 +132,7 @@ def exception_handler(_: Request[Any, Any, Any], exc: Exception):
     raise exc
 
 
-def create_app() -> Litestar:
+def create_app(stores: dict[str, Store] | None = None) -> Litestar:
     return Litestar(
         route_handlers=[
             fc_proxy,
@@ -142,6 +144,6 @@ def create_app() -> Litestar:
         ],
         cors_config=cors_config,
         middleware=[session_config.middleware],
-        stores={"oidc_sessions": MemoryStore()},
+        stores=stores or {"oidc_sessions": FileStore(Path("/tmp"))},
         exception_handlers={Exception: exception_handler},
     )
