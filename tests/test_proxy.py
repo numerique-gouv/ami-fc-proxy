@@ -192,14 +192,14 @@ async def test_proxy_ami_fi_token(
     await store.set("fake-code", "http://review-app1/", expires_in=500)
     httpx_mock.add_response(json={"access_token": "fake-access-token"})
     params = {"code": "fake-code"}
-    response = test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
+    response = test_client.post("/api/v1/fi/token/", json=params, follow_redirects=False)
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"access_token": "fake-access-token"}
 
 
 def test_proxy_ami_fi_token_missing_code(test_client: TestClient[Litestar]) -> None:
     with pytest.raises(Exception) as e:
-        test_client.post("/api/v1/fi/token/", follow_redirects=False)
+        test_client.post("/api/v1/fi/token/", json={}, follow_redirects=False)
     assert str(e.value) == "Can not found code in query"
 
 
@@ -211,5 +211,5 @@ async def test_proxy_ami_fi_token_missing_from_url(
     await store.set("another-fake-code", "from_url", expires_in=500)
     params = {"code": "fake-code"}
     with pytest.raises(Exception) as e:
-        test_client.post("/api/v1/fi/token/", params=params, follow_redirects=False)
+        test_client.post("/api/v1/fi/token/", json=params, follow_redirects=False)
     assert str(e.value) == "Can not found from_url in storage"

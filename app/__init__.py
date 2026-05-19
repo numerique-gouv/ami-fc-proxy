@@ -97,8 +97,8 @@ async def ami_fi_authorize(request: Request[Any, Any, Any], query: dict[str, str
 
 
 @post(path="/api/v1/fi/token/", include_in_schema=False)
-async def ami_fi_token(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
-    code = query.get("code")
+async def ami_fi_token(request: Request[Any, Any, Any], data: dict[str, str]) -> Response[Any]:
+    code = data.get("code")
     if not code:
         raise Exception("Can not found code in query")
     store = request.app.stores.get("oidc_sessions")
@@ -109,7 +109,7 @@ async def ami_fi_token(request: Request[Any, Any, Any], query: dict[str, str]) -
     async with AsyncClient() as client:
         response = await client.post(
             f"{from_url.decode()}api/v1/fi/token/",
-            params=query,
+            params=data,
         )
     return Response(
         response.json(),
