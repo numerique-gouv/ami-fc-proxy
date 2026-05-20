@@ -146,7 +146,7 @@ async def ami_fi_userinfo(request: Request[Any, Any, Any], query: dict[str, str]
     async with AsyncClient() as client:
         response = await client.get(
             f"{from_url.decode()}api/v1/fi/userinfo/",
-            headers=request.headers,
+            headers={"Authorization": auth_header},
         )
     return Response(
         response.json(),
