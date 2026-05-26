@@ -260,3 +260,50 @@ async def test_proxy_ami_fi_userinfo_missing_from_url(
     with pytest.raises(Exception) as e:
         test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
     assert str(e.value) == "Can not found from_url in storage"
+
+
+def test_proxy_ami_fi_logout(
+    test_client: TestClient[Litestar], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    params = {
+        "post_logout_redirect_uri": "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback",
+        "state": "fake-state",
+    }
+    monkeypatch.setattr("litestar.Request.session", {"ami_fi_from_url": "http://review-app1/"})
+    response = test_client.get("/api/v1/fi/logout/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_302_FOUND
+    assert response.headers["location"] == (
+        "http://review-app1/api/v1/fi/logout/"
+        "?post_logout_redirect_uri=https%3A%2F%2Ffcp-low.sbx.dev-franceconnect.fr%2Fapi%2Fv2%2Fclient%2Flogout-callback&state=fake-state"
+    )
+
+
+def test_proxy_ami_fi_logout_missing_session_and_post_logout_redirect_uri(
+    test_client: TestClient[Litestar],
+) -> None:
+    response = test_client.get("/api/v1/fi/logout/", params={}, follow_redirects=False)
+    assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"error": "Can not redirect to FI logout endpoint"}
+
+
+def test_proxy_ami_fi_logout_missing_session(test_client: TestClient[Litestar]) -> None:
+    params = {
+        "post_logout_redirect_uri": "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback",
+    }
+    response = test_client.get("/api/v1/fi/logout/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_302_FOUND
+    assert (
+        response.headers["location"]
+        == "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback?state="
+    )
+
+    params = {
+        "post_logout_redirect_uri": "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback",
+        "state": "fake-state",
+    }
+    response = test_client.get("/api/v1/fi/logout/", params=params, follow_redirects=False)
+    assert response.status_code == HTTP_302_FOUND
+    assert (
+        response.headers["location"]
+        == "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback?state=fake-state"
+    )

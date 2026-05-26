@@ -154,6 +154,20 @@ async def ami_fi_userinfo(request: Request[Any, Any, Any], query: dict[str, str]
     )
 
 
+@get(path="/api/v1/fi/logout/", include_in_schema=False)
+async def ami_fi_logout(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
+    from_url = request.session.get("ami_fi_from_url")
+    if not from_url:
+        post_logout_redirect_uri = query.get("post_logout_redirect_uri")
+        if not post_logout_redirect_uri:
+            details = {"error": "Can not redirect to FI logout endpoint"}
+            return Response(details, status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+        redirect_uri = f"{post_logout_redirect_uri}?state={query.get('state', '')}"
+        return Redirect(redirect_uri)
+    redirect_url = f"{from_url}api/v1/fi/logout/"
+    return Redirect(redirect_url, query_params=query)
+
+
 # APP
 
 
@@ -172,6 +186,7 @@ def create_app(stores: dict[str, Store] | None = None) -> Litestar:
             ami_fi_authorize,
             ami_fi_token,
             ami_fi_userinfo,
+            ami_fi_logout,
         ],
         cors_config=cors_config,
         middleware=[session_config.middleware],
