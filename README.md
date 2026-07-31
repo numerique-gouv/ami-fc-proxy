@@ -26,7 +26,7 @@ Here's an example query for the login from `https://example.com` to the FC servi
 through a proxy deployed on `https://fc-proxy`:
 
 ```
-https://fcp-low.sbx.dev-franceconnect.fr/api/v2/authorize?scope=email&redirect_uri=https%3A%2F%2Ffc-proxy&response_type=code&client_id=fb9615294c746145edd857b4edbeb4996e316ae1712ed2bb361150a1e6cd8c6f&state=https%3A%2F%2Fexample.com%2Flogin-callback&nonce=not-implemented-yet-and-has-more-than-32-chars&acr_values=eidas1&prompt=login
+https://fcp-low.sbx.dev-franceconnect.fr/api/v2/authorize?scope=email&redirect_uri=https%3A%2F%2Ffc-proxy&response_type=code&client_id=fake-client-id&state=https%3A%2F%2Fexample.com%2Flogin-callback&nonce=not-implemented-yet-and-has-more-than-32-chars&acr_values=eidas1&prompt=login
 ```
 
 Note the presence of the (urlencoded) proxy url in the `redirect_uri` query
@@ -64,6 +64,9 @@ Ruff is used both for linting and formatting:
 ```shell
 make lint-and-format
 ```
+
+For any specific env variables, create (or edit) a `.env.local` file. Anything in here
+will overload what's in the `.env` file.
 
 ### Tests
 

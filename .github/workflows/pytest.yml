@@ -36,6 +36,11 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
+      - name: Create .env file
+        run: cp .env .env.local
+
       - name: Run tests
+        env:
+          COOKIE_BACKEND_CONFIG_SECRET: fakesecretcoookieof32charrrrrrrr
         run: make test
 

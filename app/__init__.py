@@ -22,8 +22,10 @@ from litestar.status_codes import (
 from litestar.stores.base import Store
 from litestar.stores.file import FileStore
 
+from app import env
+
 cors_config = CORSConfig(allow_origins=["*"])
-session_config = CookieBackendConfig(secret=b"34682223291bc7c0736507d1b91288bd")
+session_config = CookieBackendConfig(secret=env.COOKIE_BACKEND_CONFIG_SECRET.encode("utf-8"))
 
 
 # ENDPOINTS
