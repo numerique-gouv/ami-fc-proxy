@@ -12,4 +12,4 @@ serve:
 
 .PHONY: test
 test:
-	uv run pytest
+	uv run --env-file .env --env-file .env.local pytest
