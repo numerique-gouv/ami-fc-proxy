@@ -1,3 +1,10 @@
+ifdef CONTAINER
+  # We're on scalingo, don't use uv
+  RUN :=
+else
+  RUN := uv run --env-file .env --env-file .env.local
+endif
+
 .PHONY: lint-and-format
 lint-and-format:
 	uv run pre-commit run --all-files
@@ -12,4 +19,4 @@ serve:
 
 .PHONY: test
 test:
-	uv run --env-file .env --env-file .env.local pytest
+	$(RUN) pytest
