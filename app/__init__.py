@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import parse_qs, unquote, urlparse, urlunparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 from httpx import AsyncClient
 from litestar import (
@@ -45,12 +45,11 @@ async def fc_proxy(query: dict[str, str]) -> Response[Any]:
     parsed = urlparse(state_redirect_url)
     # Parse the provided redirect url's query params into a dict.
     redirect_url_query = parse_qs(parsed.query, keep_blank_values=True)
-    # We'll reconstruct the query params, so strip them from the provided redirect url.
-    without_query_params = parsed._replace(query="")
-    # Reconstruct (unparse) the redirect url, without its query parameters.
-    redirect_url = urlunparse(without_query_params)
+    # Reconstruct the the redirect url, with merged query parameters
     all_query_params = {**query, **redirect_url_query}
-    return Redirect(redirect_url, query_params=all_query_params)
+    with_all_query_params = parsed._replace(query=urlencode(all_query_params, doseq=True))
+    redirect_url = urlunparse(with_all_query_params)
+    return Redirect(redirect_url)
 
 
 @get(path="/ami-fi-authorize-request/", include_in_schema=False)
