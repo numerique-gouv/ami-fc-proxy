@@ -231,6 +231,22 @@ async def test_proxy_ami_fi_userinfo(
     response = test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"foo": "bar"}
+    assert response.headers["content-type"] == "application/json"
+
+
+async def test_proxy_ami_fi_userinfo_jwt(
+    app: Litestar,
+    test_client: TestClient[Litestar],
+    httpx_mock: HTTPXMock,
+) -> None:
+    store = app.stores.get("oidc_sessions")
+    await store.set("fake-access-token", "http://review-app1/", expires_in=500)
+    httpx_mock.add_response(content=b"fake-jwt", headers={"content-type": "application/jwt"})
+    headers = {"authorization": "Bearer fake-access-token"}
+    response = test_client.get("/api/v1/fi/userinfo/", headers=headers, follow_redirects=False)
+    assert response.status_code == HTTP_200_OK
+    assert response.content == b"fake-jwt"
+    assert response.headers["content-type"] == "application/jwt"
 
 
 def test_proxy_ami_fi_userinfo_missing_authorization_header(

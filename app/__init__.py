@@ -150,8 +150,9 @@ async def ami_fi_userinfo(request: Request[Any, Any, Any], query: dict[str, str]
             headers={"Authorization": auth_header},
         )
     return Response(
-        response.json(),
+        response.content,
         status_code=response.status_code,
+        media_type=response.headers["content-type"],
     )
 
 
