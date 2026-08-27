@@ -2,5 +2,4 @@ import os
 
 COOKIE_BACKEND_CONFIG_SECRET = os.getenv("COOKIE_BACKEND_CONFIG_SECRET", "")
 FI_PUBLIC_KEY_PEM = os.getenv("FI_PUBLIC_KEY_PEM", "")
-FI_PRIVATE_KEY_PEM = os.getenv("FI_PRIVATE_KEY_PEM", "")
 FI_KEY_ID = os.getenv("FI_KEY_ID", "")
