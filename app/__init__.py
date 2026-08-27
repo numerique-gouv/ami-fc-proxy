@@ -1,8 +1,13 @@
+import base64
+import math
 import re
 from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from httpx import AsyncClient
 from litestar import (
     Litestar,
@@ -170,6 +175,35 @@ async def ami_fi_logout(request: Request[Any, Any, Any], query: dict[str, str]) 
     return Redirect(redirect_url, query_params=query)
 
 
+def encode_b64url_int(data: int) -> str:
+    length = max(data.bit_length(), 8)
+    length = math.ceil(length / 8)
+    return (
+        base64.urlsafe_b64encode(data.to_bytes(byteorder="big", length=length))
+        .rstrip(b"=")
+        .decode("ascii")
+    )
+
+
+@get(path="/api/v1/fi/jwks", include_in_schema=False)
+async def ami_fi_jwks(request: Request[Any, Any, Any], query: dict[str, str]) -> Response[Any]:
+    pem_public_key = env.FI_PUBLIC_KEY_PEM.encode()
+    public_key = serialization.load_pem_public_key(pem_public_key, backend=default_backend())
+    if not isinstance(public_key, EllipticCurvePublicKey):
+        raise Exception("Expected Elliptic Curve public key")
+    numbers = public_key.public_numbers()
+    jwk = {
+        "kty": "EC",
+        "use": "sig",
+        "kid": env.FI_KEY_ID,
+        "alg": "ES256",
+        "crv": "P-256",
+        "x": encode_b64url_int(numbers.x),
+        "y": encode_b64url_int(numbers.y),  # type: ignore
+    }
+    return Response({"keys": [jwk]})
+
+
 # APP
 
 
@@ -189,6 +223,7 @@ def create_app(stores: dict[str, Store] | None = None) -> Litestar:
             ami_fi_token,
             ami_fi_userinfo,
             ami_fi_logout,
+            ami_fi_jwks,
         ],
         cors_config=cors_config,
         middleware=[session_config.middleware],

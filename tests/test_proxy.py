@@ -323,3 +323,12 @@ def test_proxy_ami_fi_logout_missing_session(test_client: TestClient[Litestar]) 
         response.headers["location"]
         == "https://fcp-low.sbx.dev-franceconnect.fr/api/v2/client/logout-callback?state=fake-state"
     )
+
+
+async def test_proxy_jwks(test_client: TestClient[Litestar]) -> None:
+    response = test_client.get(
+        "/api/v1/fi/jwks",
+        follow_redirects=False,
+    )
+    assert response.status_code == HTTP_200_OK
+    assert response.json()["keys"][0]["alg"] == "ES256"
